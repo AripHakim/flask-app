@@ -5,7 +5,7 @@ import os
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/plagiarism": {"origins": "https://winnowing-web.vercel.app"}})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

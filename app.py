@@ -5,8 +5,10 @@ import os
 
 
 app = Flask(__name__)
-app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
 CORS(app)
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=5000, debug=True)
 
 def winnowing_fingerprint(text, k, window_size):
     shingles = [text[i:i+k] for i in range(len(text) - k + 1)]

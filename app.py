@@ -52,6 +52,3 @@ def detect_plagiarism():
             })
     
     return jsonify({'similarities': similarities})
-
-if __name__ == '__main__':
-    app.run(debug=True)

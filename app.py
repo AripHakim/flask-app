@@ -32,6 +32,9 @@ def compare_documents(doc1, doc2, k, window_size):
     
 @app.route('/plagiarism', methods=['POST', 'OPTIONS'])
 def detect_plagiarism():
+    if request.method == 'OPTIONS':
+         return '', 200  # Tangani request preflight agar tidak error
+         
     data = request.json
     documents = data['documents']
     k = data['k']

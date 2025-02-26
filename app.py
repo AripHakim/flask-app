@@ -5,7 +5,8 @@ import os
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/plagiarism": {"origins": "https://winnowing-web.vercel.app"}})
+CORS(app, resources={r"/plagiarism": {"origins": "https://winnowing-web.vercel.app"}},
+     supports_credentials=True)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
@@ -28,8 +29,8 @@ def compare_documents(doc1, doc2, k, window_size):
     common_fingerprints = set(fp1) & set(fp2)  # Intersection of both fingerprint sets
     similarity = len(common_fingerprints) / max(len(fp1), len(fp2)) * 100
     return similarity
-
-@app.route('/plagiarism', methods=['POST'])
+    
+@app.route('/plagiarism', methods=['POST', 'OPTIONS'])
 def detect_plagiarism():
     data = request.json
     documents = data['documents']

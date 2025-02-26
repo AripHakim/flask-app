@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import hashlib
+import os
+
 
 app = Flask(__name__)
+app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
 CORS(app)
 
 def winnowing_fingerprint(text, k, window_size):

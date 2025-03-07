@@ -10,7 +10,7 @@ CORS(app, resources={r"/plagiarism": {"origins": "https://winnowing-web.vercel.a
 
 def winnowing_fingerprint(text, k, window_size):
     shingles = [text[i:i+k] for i in range(len(text) - k + 1)]
-    hashes = [hashlib.md5(shingle.encode('utf-8')).hexdigest() for shingle in shingles]
+    hashes = [hashlib.sha256(shingle.encode('utf-8')).hexdigest() for shingle in shingles]
     
     fingerprints = []
     for i in range(len(hashes) - window_size + 1):

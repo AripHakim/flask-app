@@ -5,7 +5,7 @@ import os
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/plagiarism": {"origins": "https://winnowing-web.vercel.app"}},
+CORS(app, resources={r"/plagiarism": {"origins": ["https://winnowing-web.vercel.app", "exp://*"]}},
      supports_credentials=True)
 
 def winnowing_fingerprint(text, k, window_size):

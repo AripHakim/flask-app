@@ -4,7 +4,8 @@ from pdfminer.high_level import extract_text
 import hashlib
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/plagiarism": {"origins": ["https://winnowing-web.vercel.app", "exp://*"]}},
+     supports_credentials=True)
 
 def winnowing_fingerprint(text, k, window_size):
     shingles = [text[i:i+k] for i in range(len(text) - k + 1)]
@@ -34,8 +35,11 @@ def compare_documents(doc1, doc2, k, window_size):
     similarity = len(common_fingerprints) / max(len(fp1), len(fp2)) * 100
     return similarity
 
-@app.route('/plagiarism', methods=['POST'])
+@app.route('/plagiarism', methods=['POST', 'OPTIONS'])
 def detect_plagiarism():
+    if request.method == 'OPTIONS':
+         return '', 200  # Tangani request preflight agar tidak error
+        
     data = request.json
     documents_base64 = data['documents']  # Base64 dari React Native
     k = data['k']

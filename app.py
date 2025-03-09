@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from pdfminer.high_level import extract_text
 import hashlib
 import os
-
+import base64
+import io
 
 app = Flask(__name__)
 CORS(app, resources={r"/plagiarism": {"origins": ["https://winnowing-web.vercel.app", "exp://*"]}},
@@ -18,6 +20,15 @@ def winnowing_fingerprint(text, k, window_size):
         fingerprints.append(min(window))  # Take the smallest hash in the window
     
     return fingerprints
+
+
+
+def extract_text_from_base64(pdf_base64):
+    pdf_bytes = base64.b64decode(pdf_base64)
+    pdf_stream = io.BytesIO(pdf_bytes)
+    text = extract_text(pdf_stream)
+    return text
+
 
 def compare_documents(doc1, doc2, k, window_size):
     fp1 = winnowing_fingerprint(doc1, k, window_size)

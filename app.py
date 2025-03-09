@@ -2,13 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pdfminer.high_level import extract_text
 import hashlib
-import os
-import base64
-import io
 
 app = Flask(__name__)
-CORS(app, resources={r"/plagiarism": {"origins": ["https://winnowing-web.vercel.app", "exp://*"]}},
-     supports_credentials=True)
+CORS(app)
 
 def winnowing_fingerprint(text, k, window_size):
     shingles = [text[i:i+k] for i in range(len(text) - k + 1)]
@@ -37,28 +33,26 @@ def compare_documents(doc1, doc2, k, window_size):
     common_fingerprints = set(fp1) & set(fp2)  # Intersection of both fingerprint sets
     similarity = len(common_fingerprints) / max(len(fp1), len(fp2)) * 100
     return similarity
-    
-@app.route('/plagiarism', methods=['POST', 'OPTIONS'])
+
+@app.route('/plagiarism', methods=['POST'])
 def detect_plagiarism():
-    if request.method == 'OPTIONS':
-         return '', 200  # Tangani request preflight agar tidak error
-         
     data = request.json
-    documents = data['documents']
+    documents_base64 = data['documents']  # Base64 dari React Native
     k = data['k']
     window_size = data['window_size']
-    
+
+    extracted_texts = [extract_text_from_base64(pdf) for pdf in documents_base64]  # Ubah ke teks
+
     similarities = []
-    
-    for i in range(len(documents)):
-        for j in range(i + 1, len(documents)):
-            similarity = compare_documents(documents[i], documents[j], k, window_size)
+    for i in range(len(extracted_texts)):
+        for j in range(i + 1, len(extracted_texts)):
+            similarity = compare_documents(extracted_texts[i], extracted_texts[j], k, window_size)
             similarities.append({
                 'doc1_index': i,
                 'doc2_index': j,
                 'similarity': similarity
             })
-    
+
     return jsonify({'similarities': similarities})
 
      

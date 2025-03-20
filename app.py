@@ -1,13 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import hashlib
+import pdfplumber  # Untuk ekstraksi teks lebih akurat
 import os
-
 
 app = Flask(__name__)
 CORS(app, resources={r"/plagiarism": {"origins": "*"}},
      supports_credentials=True)
 
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Pastikan folder upload ada
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def winnowing_fingerprint(text, k, window_size):
     shingles = [text[i:i+k] for i in range(len(text) - k + 1)]
@@ -27,12 +30,28 @@ def compare_documents(doc1, doc2, k, window_size):
     common_fingerprints = set(fp1) & set(fp2)  # Intersection of both fingerprint sets
     similarity = len(common_fingerprints) / max(len(fp1), len(fp2)) * 100
     return similarity
+
+# ✅ Endpoint untuk ekstraksi teks dari PDF
+@app.route('/extract-text', methods=['POST'])
+def extract_text():
+    if 'pdf' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
     
-@app.route('/plagiarism', methods=['POST', 'OPTIONS'])
+    file = request.files['pdf']
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(file_path)
+
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+        
+        return jsonify({"text": text})
+    except Exception as e:
+        return jsonify({"error": f"Failed to extract text: {str(e)}"}), 500
+
+# ✅ Endpoint untuk cek plagiasi (menggunakan teks yang sudah diekstrak)
+@app.route('/plagiarism', methods=['POST'])
 def detect_plagiarism():
-    if request.method == 'OPTIONS':
-         return '', 200  # Tangani request preflight agar tidak error
-         
     data = request.json
     documents = data['documents']
     k = data['k']
@@ -52,5 +71,4 @@ def detect_plagiarism():
     return jsonify({'similarities': similarities})
 
 if __name__ == '__main__':
-    # app.run(debug=True)
-        app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

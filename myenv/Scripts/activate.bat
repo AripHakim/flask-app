@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\Windows 10\Downloads\ARIP\flask-app\myenv
+set VIRTUAL_ENV=C:\Users\Administrator\Downloads\ARIP\flask-app\myenv
 
 if not defined PROMPT set PROMPT=$P$G
 

@@ -9,6 +9,7 @@ import pypdfium2  # type: ignore
 from . import utils
 from ._typing import T_bbox, T_num, T_obj, T_obj_list, T_point, T_seq
 from .table import T_table_settings, Table, TableFinder, TableSettings
+from .utils.exceptions import MalformedPDFException
 
 if TYPE_CHECKING:  # pragma: nocover
     import pandas as pd
@@ -52,7 +53,11 @@ def get_page_image(
         stream.seek(0)
         src = stream
 
-    pdfium_doc = pypdfium2.PdfDocument(src, password=password)
+    try:
+        pdfium_doc = pypdfium2.PdfDocument(src, password=password)
+    except pypdfium2._helpers.misc.PdfiumError as e:
+        raise MalformedPDFException(e)
+
     pdfium_page = pdfium_doc.get_page(page_ix)
 
     img: PIL.Image.Image = pdfium_page.render(

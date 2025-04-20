@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\Windows 10\Downloads\ARIP\flask-app\myenv"
+VIRTUAL_ENV="C:\Users\Administrator\Downloads\ARIP\flask-app\myenv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

@@ -1,0 +1,16 @@
+# Virtual environment
+myenv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Database lokal
+*.db
+
+# Upload folder (kalau gak perlu disimpan online)
+upload/
+
+# Config pribadi (opsional)
+.env

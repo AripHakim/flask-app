@@ -11,18 +11,19 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 UPLOAD_FOLDER = "upload"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# --- Inisialisasi dan koneksi ke SQLite ---
 DB_PATH = 'plagiarism.db'
 
+# --- Inisialisasi Database ---
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS plagiarism_results (
+        CREATE TABLE IF NOT EXISTS hasil_cek (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT,
             doc1_name TEXT,
             doc2_name TEXT,
             doc1_text TEXT,
@@ -36,19 +37,19 @@ def init_db():
 
 init_db()
 
-def save_result_to_db(doc1_name, doc2_name, doc1_text, doc2_text, similarity):
+# --- Simpan hasil ke DB ---
+def save_result_to_db(session_id, doc1_name, doc2_name, doc1_text, doc2_text, similarity):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
-        INSERT INTO plagiarism_results 
-        (doc1_name, doc2_name, doc1_text, doc2_text, similarity) 
-        VALUES (?, ?, ?, ?, ?)
-    ''', (doc1_name, doc2_name, doc1_text, doc2_text, similarity))
+        INSERT INTO hasil_cek 
+        (session_id, doc1_name, doc2_name, doc1_text, doc2_text, similarity) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (session_id, doc1_name, doc2_name, doc1_text, doc2_text, similarity))
     conn.commit()
     conn.close()
 
-
-# --- Fungsi Winnowing & Plagiarism ---
+# --- Algoritma Winnowing ---
 def winnowing_fingerprint(text, k, window_size):
     shingles = [text[i:i+k] for i in range(len(text) - k + 1)]
     hashes = [hashlib.sha256(shingle.encode('utf-8')).hexdigest() for shingle in shingles]
@@ -56,7 +57,7 @@ def winnowing_fingerprint(text, k, window_size):
     fingerprints = []
     for i in range(len(hashes) - window_size + 1):
         window = hashes[i:i+window_size]
-        fingerprints.append(min(window)) 
+        fingerprints.append(min(window))
     
     return fingerprints
 
@@ -64,11 +65,11 @@ def compare_documents(doc1, doc2, k, window_size):
     fp1 = winnowing_fingerprint(doc1, k, window_size)
     fp2 = winnowing_fingerprint(doc2, k, window_size)
     
-    common_fingerprints = set(fp1) & set(fp2)  
+    common_fingerprints = set(fp1) & set(fp2)
     similarity = len(common_fingerprints) / max(len(fp1), len(fp2)) * 100
     return similarity
 
-# --- Ekstrak teks dari PDF ---
+# --- Ekstrak teks PDF ---
 @app.route('/extract-text', methods=['POST'])
 def extract_text():
     if 'pdf' not in request.files:
@@ -84,16 +85,16 @@ def extract_text():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# --- Endpoint untuk cek plagiarisme ---
+# --- Endpoint untuk deteksi plagiarisme ---
 @app.route('/plagiarism', methods=['POST'])
 def detect_plagiarism():
     data = request.json
-    documents = data['documents']  # [{'name': ..., 'text': ...}]
+    documents = data['documents']
     k = data['k']
     window_size = data['window_size']
 
     similarities = []
+    session_id = datetime.now().isoformat()  # penanda sesi
 
     for i in range(len(documents)):
         for j in range(i + 1, len(documents)):
@@ -107,11 +108,13 @@ def detect_plagiarism():
                 'doc2_index': j,
                 'doc1_name': doc1['name'],
                 'doc2_name': doc2['name'],
-                'similarity': similarity
+                'similarity': similarity,
+                'session_id': session_id
             }
             similarities.append(result)
 
             save_result_to_db(
+                session_id=session_id,
                 doc1_name=doc1['name'],
                 doc2_name=doc2['name'],
                 doc1_text=doc1['text'],
@@ -119,30 +122,40 @@ def detect_plagiarism():
                 similarity=similarity
             )
 
-    return jsonify({'similarities': similarities})
+    return jsonify({'similarities': similarities, 'session_id': session_id})
 
-# Menampilkan Riwayat
+# --- Endpoint Riwayat, dikelompokkan berdasarkan sesi ---
 @app.route('/history', methods=['GET'])
 def get_history():
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('SELECT id, doc1_name, doc2_name, similarity, checked_at FROM plagiarism_results ORDER BY checked_at DESC')
+    c.execute('SELECT * FROM hasil_cek ORDER BY checked_at DESC')
     rows = c.fetchall()
     conn.close()
 
-    history = []
+    sessions = {}
     for row in rows:
-        history.append({
-            'id': row[0],
-            'doc1_name': row[1],
-            'doc2_name': row[2],
-            'similarity': row[3],
-            'checked_at': row[4]
+        session_id = row['session_id']
+        if session_id not in sessions:
+            sessions[session_id] = {
+                'session_id': session_id,
+                'checked_at': row['checked_at'],
+                'results': []
+            }
+        sessions[session_id]['results'].append({
+            'id': row['id'],
+            'doc1_name': row['doc1_name'],
+            'doc2_name': row['doc2_name'],
+            'similarity': row['similarity']
         })
+
+    history = list(sessions.values())
+    history.sort(key=lambda x: x['checked_at'], reverse=True)
 
     return jsonify({'history': history})
 
-#Menampilkan isi dokumen
+# --- Ambil isi dokumen dari riwayat ---
 @app.route('/history-doc/<int:doc_id>/<string:doc_type>', methods=['GET'])
 def get_history_doc(doc_id, doc_type):
     if doc_type not in ['doc1', 'doc2']:
@@ -152,7 +165,7 @@ def get_history_doc(doc_id, doc_type):
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
-        c.execute('SELECT id, doc1_name, doc2_name, doc1_text, doc2_text FROM plagiarism_results WHERE id = ?', (doc_id,))
+        c.execute('SELECT id, doc1_name, doc2_name, doc1_text, doc2_text FROM hasil_cek WHERE id = ?', (doc_id,))
         row = c.fetchone()
         if not row:
             return jsonify({'error': 'Dokumen tidak ditemukan'}), 404
@@ -175,6 +188,24 @@ def get_history_doc(doc_id, doc_type):
         }
 
     return jsonify({'dokumen': result})
+
+# --- Endpoint Menghapus Sesi ---
+@app.route('/delete-session/<string:session_id>', methods=['DELETE'])
+def delete_session(session_id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('DELETE FROM hasil_cek WHERE session_id = ?', (session_id,))
+        deleted = c.rowcount
+        conn.commit()
+        conn.close()
+
+        if deleted == 0:
+            return jsonify({'message': 'Tidak ada data dengan session_id tersebut'}), 404
+
+        return jsonify({'message': f'{deleted} data dari session {session_id} berhasil dihapus'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # --- Menjalankan server ---

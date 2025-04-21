@@ -130,7 +130,7 @@ def get_history():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('SELECT * FROM hasil_cek ORDER BY session_id DESC')
+    c.execute('SELECT * FROM hasil_cek ORDER BY checked_at DESC')
     rows = c.fetchall()
     conn.close()
 
@@ -151,7 +151,7 @@ def get_history():
         })
 
     history = list(sessions.values())
-    history.sort(key=lambda x: x['checked_at'], reverse=True)
+    history.sort(key=lambda x: x['session_id'], reverse=True)
 
     return jsonify({'history': history})
 

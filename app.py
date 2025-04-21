@@ -130,7 +130,11 @@ def get_history():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
+<<<<<<< HEAD
     c.execute('SELECT * FROM hasil_cek ORDER BY checked_at DESC')
+=======
+    c.execute('SELECT id, doc1_name, doc2_name, similarity, checked_at FROM plagiarism_results ORDER BY id DESC')
+>>>>>>> 7a08a3196277ee4c2169206f3bb79c17501efb33
     rows = c.fetchall()
     conn.close()
 
@@ -189,6 +193,7 @@ def get_history_doc(doc_id, doc_type):
 
     return jsonify({'dokumen': result})
 
+<<<<<<< HEAD
 # --- Endpoint Menghapus Sesi ---
 @app.route('/delete-session/<string:session_id>', methods=['DELETE'])
 def delete_session(session_id):
@@ -207,6 +212,17 @@ def delete_session(session_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+=======
+@app.route("/reset-tabel")
+def reset_tabel():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM plagiarism_results")
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='plagiarism_results'")
+    conn.commit()
+    conn.close()
+    return "Tabel berhasil dikosongkan"
+>>>>>>> 7a08a3196277ee4c2169206f3bb79c17501efb33
 
 # --- Menjalankan server ---
 if __name__ == '__main__':

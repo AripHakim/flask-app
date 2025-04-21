@@ -126,7 +126,7 @@ def detect_plagiarism():
 def get_history():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('SELECT id, doc1_name, doc2_name, similarity, checked_at FROM plagiarism_results ORDER BY checked_at DESC')
+    c.execute('SELECT id, doc1_name, doc2_name, similarity, checked_at FROM plagiarism_results ORDER BY id DESC')
     rows = c.fetchall()
     conn.close()
 

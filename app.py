@@ -176,6 +176,15 @@ def get_history_doc(doc_id, doc_type):
 
     return jsonify({'dokumen': result})
 
+@app.route("/reset-tabel")
+def reset_tabel():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM plagiarism_results")
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='plagiarism_results'")
+    conn.commit()
+    conn.close()
+    return "Tabel berhasil dikosongkan"
 
 # --- Menjalankan server ---
 if __name__ == '__main__':

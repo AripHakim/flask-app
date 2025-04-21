@@ -130,7 +130,7 @@ def get_history():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('SELECT * FROM hasil_cek ORDER BY checked_at DESC')
+    c.execute('SELECT * FROM hasil_cek ORDER BY session_id DESC')
     rows = c.fetchall()
     conn.close()
 

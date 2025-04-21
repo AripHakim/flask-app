@@ -21,7 +21,7 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS hasil_cek (
+        CREATE TABLE IF NOT EXISTS plagiarism_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id TEXT,
             doc1_name TEXT,
@@ -42,7 +42,7 @@ def save_result_to_db(session_id, doc1_name, doc2_name, doc1_text, doc2_text, si
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
-        INSERT INTO hasil_cek 
+        INSERT INTO plagiarism_results 
         (session_id, doc1_name, doc2_name, doc1_text, doc2_text, similarity) 
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (session_id, doc1_name, doc2_name, doc1_text, doc2_text, similarity))
@@ -130,11 +130,7 @@ def get_history():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-<<<<<<< HEAD
-    c.execute('SELECT * FROM hasil_cek ORDER BY checked_at DESC')
-=======
-    c.execute('SELECT id, doc1_name, doc2_name, similarity, checked_at FROM plagiarism_results ORDER BY id DESC')
->>>>>>> 7a08a3196277ee4c2169206f3bb79c17501efb33
+    c.execute('SELECT * FROM plagiarism_results ORDER BY checked_at DESC')
     rows = c.fetchall()
     conn.close()
 
@@ -169,7 +165,7 @@ def get_history_doc(doc_id, doc_type):
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
-        c.execute('SELECT id, doc1_name, doc2_name, doc1_text, doc2_text FROM hasil_cek WHERE id = ?', (doc_id,))
+        c.execute('SELECT id, doc1_name, doc2_name, doc1_text, doc2_text FROM plagiarism_results WHERE id = ?', (doc_id,))
         row = c.fetchone()
         if not row:
             return jsonify({'error': 'Dokumen tidak ditemukan'}), 404
@@ -193,14 +189,13 @@ def get_history_doc(doc_id, doc_type):
 
     return jsonify({'dokumen': result})
 
-<<<<<<< HEAD
 # --- Endpoint Menghapus Sesi ---
 @app.route('/delete-session/<string:session_id>', methods=['DELETE'])
 def delete_session(session_id):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute('DELETE FROM hasil_cek WHERE session_id = ?', (session_id,))
+        c.execute('DELETE FROM plagiarism_results WHERE session_id = ?', (session_id,))
         deleted = c.rowcount
         conn.commit()
         conn.close()
@@ -211,18 +206,6 @@ def delete_session(session_id):
         return jsonify({'message': f'{deleted} data dari session {session_id} berhasil dihapus'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-=======
-@app.route("/reset-tabel")
-def reset_tabel():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM plagiarism_results")
-    cursor.execute("DELETE FROM sqlite_sequence WHERE name='plagiarism_results'")
-    conn.commit()
-    conn.close()
-    return "Tabel berhasil dikosongkan"
->>>>>>> 7a08a3196277ee4c2169206f3bb79c17501efb33
 
 # --- Menjalankan server ---
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS plagiarism_results (
+        CREATE TABLE IF NOT EXISTS hasil_cek (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id TEXT,
             doc1_name TEXT,
@@ -42,7 +42,7 @@ def save_result_to_db(session_id, doc1_name, doc2_name, doc1_text, doc2_text, si
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
-        INSERT INTO plagiarism_results 
+        INSERT INTO hasil_cek 
         (session_id, doc1_name, doc2_name, doc1_text, doc2_text, similarity) 
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (session_id, doc1_name, doc2_name, doc1_text, doc2_text, similarity))
@@ -130,7 +130,7 @@ def get_history():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('SELECT * FROM plagiarism_results ORDER BY checked_at DESC')
+    c.execute('SELECT * FROM hasil_cek ORDER BY checked_at DESC')
     rows = c.fetchall()
     conn.close()
 
@@ -165,7 +165,7 @@ def get_history_doc(doc_id, doc_type):
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
-        c.execute('SELECT id, doc1_name, doc2_name, doc1_text, doc2_text FROM plagiarism_results WHERE id = ?', (doc_id,))
+        c.execute('SELECT id, doc1_name, doc2_name, doc1_text, doc2_text FROM hasil_cek WHERE id = ?', (doc_id,))
         row = c.fetchone()
         if not row:
             return jsonify({'error': 'Dokumen tidak ditemukan'}), 404
@@ -195,7 +195,7 @@ def delete_session(session_id):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute('DELETE FROM plagiarism_results WHERE session_id = ?', (session_id,))
+        c.execute('DELETE FROM hasil_cek WHERE session_id = ?', (session_id,))
         deleted = c.rowcount
         conn.commit()
         conn.close()

@@ -6,6 +6,7 @@ import os
 import sqlite3
 import fitz  # PyMuPDF
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -94,7 +95,7 @@ def detect_plagiarism():
     window_size = data['window_size']
 
     similarities = []
-    session_id = datetime.now().strftime('%d-%m-%Y %H:%M:%S')  # penanda sesi
+    session_id = datetime.now(ZoneInfo("Asia/Makassar")).strftime('%d-%m-%Y %H:%M:%S')
 
     for i in range(len(documents)):
         for j in range(i + 1, len(documents)):

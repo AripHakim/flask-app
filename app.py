@@ -95,8 +95,7 @@ def detect_plagiarism():
     window_size = data['window_size']
 
     similarities = []
-    session_id = datetime.now(ZoneInfo("Asia/Makassar")).strftime('%d-%m-%Y %H:%M:%S')
-
+    session_id = datetime.now(ZoneInfo("Asia/Makassar")).isoformat()
     for i in range(len(documents)):
         for j in range(i + 1, len(documents)):
             doc1 = documents[i]

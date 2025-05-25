@@ -208,5 +208,7 @@ def delete_session(session_id):
         return jsonify({'error': str(e)}), 500
 
 # --- Menjalankan server ---
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+from vercel_wsgi import handle_request
+
+def handler(environ, start_response):
+    return handle_request(app, environ, start_response)

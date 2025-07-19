@@ -67,7 +67,7 @@ def compare_documents(doc1, doc2, k, window_size):
     fp2 = winnowing_fingerprint(doc2, k, window_size)
     
     common_fingerprints = set(fp1) & set(fp2)
-    similarity = len(common_fingerprints) / max(len(fp1), len(fp2)) * 100
+    similarity = len(fp1 & fp2) / len(fp1 | fp2) * 100
     return similarity
 
 # --- Ekstrak teks PDF ---
